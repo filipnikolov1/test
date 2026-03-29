@@ -28,7 +28,8 @@ jobs:
           TIMESTAMP=$(date +%s%3N)
           PAYLOAD="{\"image\":\"filipn123/test:latest\",\"app_name\":\"test\",\"repo_url\":\"https://github.com/${{ github.repository }}.git\",\"timestamp\":${TIMESTAMP}}"
           SIGNATURE="sha256=$(echo -n "$PAYLOAD" | openssl dgst -sha256 -hmac "${{ secrets.WEBHOOK_SECRET }}" | sed 's/^.* //')"
-          curl -s -X POST "${{ secrets.LAUNCHPAD_URL }}/webhook/deploy" \
+          curl -s -X POST "${{ secrets.LAUNCHPAD_URL }}/webhook/deploy" \                                                                                                                                                         
             -H "Content-Type: application/json" \
+            -H "ngrok-skip-browser-warning: true" \
             -H "X-Signature-256: $SIGNATURE" \
             -d "$PAYLOAD"
