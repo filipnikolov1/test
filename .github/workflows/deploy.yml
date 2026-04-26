@@ -39,29 +39,10 @@ jobs:
               MSG: ${{ toJSON(github.event.head_commit.message) }}
               BRANCH: ${{ github.ref_name }}
               AUTHOR: ${{ github.event.head_commit.author.name }}
+              REPO: https://github.com/${{ github.repository }}
            run: |
-              PAYLOAD=$(jq -n \                                                                                                                                                             
-                --arg app "test" \
-                --arg image "$IMAGE" \                                                     
-                --arg sha "$SHA" \                                                                                                                                                          
-                --argjson msg "$MSG" \
-                --arg branch "$BRANCH" \                                                                                                                                                    
-                --arg author "$AUTHOR" \
-                --arg ts "$(date +%s)000" \                                                                                                                                                 
-                --arg repo "https://github.com/${{ github.repository }}" \                 
-                '{                                                                                                                                                                          
-                  app_name: $app,
-                  image: $image,                                                                                                                                                            
-                  repo_url: $repo,                                                         
-                  port: 3000,                                                                                                                                                               
-                  commit_sha: $sha,                                                        
-                  commit_message: $msg,                                                                                                                                                     
-                  commit_author: $author,                                                  
-                  branch: $branch,                                                                                                                                                          
-                  timestamp: ($ts | tonumber)
-                }')                                                                                                                                                                         
+              TS="$(date +%s)000"
+              PAYLOAD=$(jq -nc --arg app "test" --arg image "$IMAGE" --arg sha "$SHA" --argjson msg "$MSG" --arg branch "$BRANCH" --arg author "$AUTHOR" --arg repo "$REPO" --arg ts "$TS" \
+                '{app_name:$app,image:$image,repo_url:$repo,port:3000,commit_sha:$sha,commit_message:$msg,commit_author:$author,branch:$branch,timestamp:($ts|tonumber)}')
               SIG="sha256=$(printf '%s' "$PAYLOAD" | openssl dgst -sha256 -hmac "$HOOK_KEY" -hex | awk '{print $2}')"
-              curl -fsS -X POST "$HOOK_URL" \                                                                                                                                               
-                -H "X-Signature-256: $SIG" \
-                -H "Content-Type: application/json" \                                                                                                                                       
-                -d "$PAYLOAD"
+              curl -fsS -X POST "$HOOK_URL" -H "X-Signature-256: $SIG" -H "Content-Type: application/json" -d "$PAYLOAD"
